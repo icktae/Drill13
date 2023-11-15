@@ -119,6 +119,13 @@ class Zombie:
     def get_patrol_location(self):
         pass
 
+    def more_ball_than_boy(self):
+        pass
+
+
+    def less_ball_than_boy(self):
+        pass
+
     def build_behavior_tree(self):
         a1 = Action('Set target location', self.set_target_location, 500, 50)
 
