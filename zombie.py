@@ -45,6 +45,7 @@ class Zombie:
         self.state = 'Idle'
         self.ball_count = 0
 
+        self.tx, self.ty = 1000, 1000
         self.build_behavior_tree()
 
 
@@ -64,6 +65,7 @@ class Zombie:
         else:
             Zombie.images[self.state][int(self.frame)].draw(self.x, self.y, 100, 100)
         self.font.draw(self.x - 10, self.y + 60, f'{self.ball_count}', (0, 0, 255))
+        Zombie.marker_image.draw(self.tx, self.ty)
         draw_rectangle(*self.get_bb())
 
     def handle_event(self, event):
@@ -103,7 +105,7 @@ class Zombie:
         return BehaviorTree.SUCCESS
 
     def is_boy_nearby(self, distance):
-        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, r):
+        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, distance):
             return BehaviorTree.SUCCESS
         else:
             return BehaviorTree.FAIL
@@ -120,11 +122,17 @@ class Zombie:
         pass
 
     def more_ball_than_boy(self):
-        pass
+        if self.ball_count >= play_mode.boy.ball_count:
+            return BehaviorTree.SUCCESS
+        else :
+            return BehaviorTree.FAIL
 
 
     def less_ball_than_boy(self):
-        pass
+        if self.ball_count < play_mode.boy.ball_count:
+            return BehaviorTree.SUCCESS
+        else :
+            return BehaviorTree.FAIL
 
     def build_behavior_tree(self):
         a1 = Action('Set target location', self.set_target_location, 500, 50)
@@ -135,10 +143,6 @@ class Zombie:
 
         a3 = Action('Set random location', self.set_random_location)
         root = SEQ_wander = Sequence('Wander', a3, a2)
-
-        c1 = Condition('소년이 근처에 있는가?', self.is_boy_nearby, 7)
-        a4 = Action('접근', self.move_to_boy)
-        root = SEQ_chase_boy = Sequence('소년을 추적', c1, a4)
 
         c1 = Condition('소년이 근처에 있는가?', self.is_boy_nearby, 7)
         a4 = Action('접근', self.move_to_boy)
