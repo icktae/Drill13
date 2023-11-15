@@ -54,7 +54,8 @@ class Zombie:
 
     def update(self):
         self.frame = (self.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % FRAMES_PER_ACTION
-        # fill here
+
+        self.bt.run()
 
 
     def draw(self):
@@ -74,28 +75,58 @@ class Zombie:
 
 
     def set_target_location(self, x=None, y=None):
-        pass
+        if not x or not y:
+            raise ValueError('Location should be given')
+        self.tx, self.ty = x, y
+        return BehaviorTree.SUCCESS
 
     def distance_less_than(self, x1, y1, x2, y2, r):
-        pass
+        distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2
+        return distance2 < (PIXEL_PER_METER * r) ** 2
 
     def move_slightly_to(self, tx, ty):
-        pass
+        self.dir = math.atan2(ty - self.y, tx - self.x)
+        self.speed = RUN_SPEED_PPS
+        self.x += self.speed * math.cos(self.dir) * game_framework.frame_time
+        self.y += self.speed * math.sin(self.dir) * game_framework.frame_time
 
     def move_to(self, r=0.5):
-        pass
+        self.state = 'Walk'
+        self.move_slightly_to(self.tx, self.ty)
+        if self.distance_less_than(self.tx, self.ty, self.x, self.y, r):
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.RUNNING
 
     def set_random_location(self):
-        pass
+        self.tx, self.ty = random.randint(100, 1280 - 100), random.randint(100, 1024 - 100)
+        return BehaviorTree.SUCCESS
 
     def is_boy_nearby(self, distance):
-        pass
+        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, r):
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.FAIL
 
     def move_to_boy(self, r=0.5):
-        pass
+        self.state = 'Walk'
+        self.move_slightly_to(play_mode.boy.x, play_mode.boy.y)
+        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, r):
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.RUNNING
 
     def get_patrol_location(self):
         pass
 
     def build_behavior_tree(self):
-        pass
+        a1 = Action('Set target location', self.set_target_location, 500, 50)
+
+        a2 = Action('Move to', self.move_to)
+
+        root = SEQ_move_to_target_location = Sequence('Move to target location', a1, a2)
+
+        a3 = Action('Set random location', self.set_random_location)
+        root = SEQ_wander = Sequence('Wander', a3, a2)
+
+        self.bt =BehaviorTree(root)
